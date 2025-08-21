@@ -8,18 +8,14 @@ pipeline {
         ACC_ID = "595712054525"
         PROJECT = "roboshop"
         COMPONENT = "catalogue"
-    } 
+    }
     options {
         timeout(time: 30, unit: 'MINUTES') 
         disableConcurrentBuilds()
     }
- /*    parameters {
-        string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-        text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
-        booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
-        choice(name: 'CHOICE', choices: ['One', 'Two', 'Three'], description: 'Pick something')
-        password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password') 
-    } */
+    parameters {
+        booleanParam(name: 'deploy', defaultValue: false, description: 'Toggle this value')
+    }
     // Build
     stages {
         stage('Read package.json') {
@@ -31,12 +27,75 @@ pipeline {
                 }
             }
         }
-        stage('Install dependencies') {
+        stage('Install Dependencies') {
             steps {
                 script {
-                    sh """
-                    npm install 
-                    """
+                   sh """
+                        npm install
+                   """
+                }
+            }
+        }
+        stage('Unit Testing') {
+            steps {
+                script {
+                   sh """
+                        echo "unit tests"
+                   """
+                }
+            }
+        }
+        /* stage('Sonar Scan') {
+            environment {
+                scannerHome = tool 'sonar-7.2'
+            }
+            steps {
+                script {
+                   // Sonar Server envrionment
+                   withSonarQubeEnv(installationName: 'sonar-7.2') {
+                         sh "${scannerHome}/bin/sonar-scanner"
+                   }
+                }
+            }
+        } */
+        // Enable webhook in sonarqube server and wait for results
+        /* stage("Quality Gate") {
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                waitForQualityGate abortPipeline: true }
+            }
+        } */
+        stage('Check Dependabot Alerts') {
+            environment { 
+                GITHUB_TOKEN = credentials('github-token')
+            }
+            steps {
+                script {
+                    // Fetch alerts from GitHub
+                    def response = sh(
+                        script: """
+                            curl -s -H "Accept: application/vnd.github+json" \
+                                 -H "Authorization: token ${GITHUB_TOKEN}" \
+                                 https://api.github.com/repos/daws-84s/catalogue/dependabot/alerts
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    // Parse JSON
+                    def json = readJSON text: response
+
+                    // Filter alerts by severity
+                    def criticalOrHigh = json.findAll { alert ->
+                        def severity = alert?.security_advisory?.severity?.toLowerCase()
+                        def state = alert?.state?.toLowerCase()
+                        return (state == "open" && (severity == "critical" || severity == "high"))
+                    }
+
+                    if (criticalOrHigh.size() > 0) {
+                        error "❌ Found ${criticalOrHigh.size()} HIGH/CRITICAL Dependabot alerts. Failing pipeline!"
+                    } else {
+                        echo "✅ No HIGH/CRITICAL Dependabot alerts found."
+                    }
                 }
             }
         }
@@ -53,9 +112,25 @@ pipeline {
                 }
             }
         }
+        stage('Trigger Deploy') {
+            when{
+                expression { params.deploy }
+            }
+            steps {
+                script {
+                    build job: 'catalogue-cd',
+                    parameters: [
+                        string(name: 'appVersion', value: "${appVersion}"),
+                        string(name: 'deploy_to', value: 'dev')
+                    ],
+                    propagate: false,  // even SG fails VPC will not be effected
+                    wait: false // VPC will not wait for SG pipeline completion
+                }
+            }
+        }
         
     }
-        
+
     post { 
         always { 
             echo 'I will always say Hello again!'
