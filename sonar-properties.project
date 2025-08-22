@@ -1,4 +1,4 @@
-sonar.projectKey=roboshop-jenkins
+sonar.projectKey=roboshop-catalogue
 sonar.projectName=roboshop-catalogue
 sonar.sources=.
 sonar.exclusions=**/node_modules/**, Dockerfile, **/db/**, Jenkinsfile
