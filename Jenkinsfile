@@ -45,7 +45,7 @@ pipeline {
                 }
             }
         }
-        /* stage('Sonar Scan') {
+         stage('Sonar Scan') {
             environment {
                 scannerHome = tool 'sonar-10.3'
             }
@@ -59,12 +59,12 @@ pipeline {
             }
         } */
         // Enable webhook in sonarqube server and wait for results
-        /* stage("Quality Gate") {
+         stage("Quality Gate") {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
                 waitForQualityGate abortPipeline: true }
             }
-        } */
+        } 
        
         stage('Docker Build') {
             steps {
