@@ -1,15 +1,4 @@
 @Library('jenkins-shared-library') _
-import groovy.transform.Field
-
-@Field def configMap = [
-    greeting: "Hello Jenkins"
-]
-
-samplePipeline(configMap)
-
-
-
-/* @Library('jenkins-shared-library') _
 
 def configMap = [                              // here is jenkins configmap maps means key value pair
     project : "roboshop",
@@ -21,4 +10,4 @@ if( ! env.BRANCH_NAME.equalsIgnoreCase('main') ){ // if not equals to main
 }
 else{
     echo "Please proceed with PROD process"
-} */
+}
