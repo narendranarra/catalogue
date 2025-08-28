@@ -1,9 +1,13 @@
 @Library('jenkins-shared-library') _
+import groovy.transform.Field
 
-def configMap = [  
-    greeting : "Hello Jenkins"
+@Field def configMap = [
+    greeting: "Hello Jenkins"
 ]
+
 samplePipeline(configMap)
+
+
 
 /* @Library('jenkins-shared-library') _
 
